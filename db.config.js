@@ -122,8 +122,26 @@ db.empleados.insertMany([
         activo: true
     }
 ]);
+db.empleados.insertOne({
+    tipo_identificacion: "TI",
+    numero_identificacion: 112233445,
+    nombres: "Ana María",
+    apellidos: "Ramírez López",
+    telefono: 300456789,
+    email: "ana.ramirez@mail.com",
+    genero: "F",
+    ciudad: {
+        codigo: 76001,
+        nombre: "Cali",
+        departamento: {
+            codigo: 76,
+            nombre: "Valle del Cauca"
+        }
+    },
+    activo: true
+});
 
-//creacion de coleccion de contratos
+// creacion de la coleccion de contratos
 db.createCollection("contratos", {
     validator: {
         $jsonSchema: {
@@ -196,7 +214,7 @@ db.contratos.createIndex({ "tipo_contrato.codigo": 1 });
 db.contratos.createIndex({ "cargo.codigo": 1 });
 db.contratos.createIndex({ "cargo.area.codigo": 1 });
 
-// inserción de datos para contratos
+// inserción de contratos
 db.contratos.insertMany([
     {
         codigo: 1,
@@ -275,6 +293,25 @@ db.contratos.insertMany([
         activo: true
     }
 ]);
+db.contratos.insertOne({
+    codigo: 5,
+    empleado_id: ObjectId("6866054c832b886c0b05da25"),
+    tipo_contrato: {
+        codigo: 2,
+        nombre: "Término fijo"
+    },
+    cargo: {
+        codigo: 102,
+        nombre: "Diseñadora UX",
+        area: {
+            codigo: 20,
+            nombre: "Diseño"
+        }
+    },
+    duracion: 6,
+    salario_base: 2100000.1,
+    activo: true
+});
 
 //creacion de coleccion novedades
 db.createCollection("novedades", {
@@ -300,7 +337,7 @@ db.createCollection("novedades", {
     }
 });
 
-//Inserción de datos en novedades
+//Inserción de novedades
 db.novedades.insertMany([
     {
         empleado_id: ObjectId("6865611780a9f4cd56e1a11d"),
@@ -323,74 +360,71 @@ db.novedades.insertMany([
         observaciones: "Licencia médica"
     }
 ]);
+db.novedades.insertOne({
+    empleado_id: ObjectId("6866054c832b886c0b05da25"),
+    tipo: {
+        codigo: 1,
+        nombre: "Falta"
+    },
+    fecha_inicial: ISODate("2025-07-03T00:00:00Z"),
+    fecha_final: ISODate("2025-07-05T00:00:00Z"),
+    observaciones: "Ausencia justificada por motivos de salud"
+});
 
 //Creacion de coleccion nominas
 db.createCollection("nominas", {
     validator: {
         $jsonSchema: {
             bsonType: "object",
-            required: ["codigo", "fecha_inicial", "fecha_final", "contratos"],
+            required: [
+                "codigo",
+                "empleado_id",
+                "fecha",
+                "salario_base",
+                "devengos",
+                "deducciones"
+            ],
             properties: {
-                codigo: { bsonType: "string" },
-                fecha_inicial: { bsonType: "date" },
-                fecha_final: { bsonType: "date" },
-                contratos: {
+                codigo: {
+                    bsonType: "int",
+                    description: "Código único de la nómina"
+                },
+                empleado_id: {
+                    bsonType: "objectId",
+                    description: "Referencia al empleado"
+                },
+                fecha: {
+                    bsonType: "date",
+                    description: "Fecha de generación de la nómina"
+                },
+                salario_base: {
+                    bsonType: "double",
+                    minimum: 0,
+                    description: "Salario base mensual"
+                },
+                devengos: {
                     bsonType: "array",
-                    minItems: 1,
+                    description: "Lista de conceptos devengados",
                     items: {
                         bsonType: "object",
-                        required: ["contrato_id", "salario_base", "devengos", "deducciones", "total_devengos", "total_deducciones", "neto_pagar"],
+                        required: ["codigo", "nombre", "valor"],
                         properties: {
-                            contrato_id: { bsonType: "objectId" },
-                            salario_base: { bsonType: "double" },
-                            devengos: {
-                                bsonType: "array",
-                                items: {
-                                    bsonType: "object",
-                                    required: ["codigo", "nombre", "valor"],
-                                    properties: {
-                                        codigo: { bsonType: "string" },
-                                        nombre: { bsonType: "string" },
-                                        valor: { bsonType: "double" }
-                                    }
-                                }
-                            },
-                            deducciones: {
-                                bsonType: "array",
-                                items: {
-                                    bsonType: "object",
-                                    required: ["codigo", "nombre", "valor"],
-                                    properties: {
-                                        codigo: { bsonType: "string" },
-                                        nombre: { bsonType: "string" },
-                                        valor: { bsonType: "double" }
-                                    }
-                                }
-                            },
-                            novedades: {
-                                bsonType: "array",
-                                items: {
-                                    bsonType: "object",
-                                    required: ["tipo", "fecha_inicial", "fecha_final", "dias", "descuento"],
-                                    properties: {
-                                        tipo: {
-                                            bsonType: "object",
-                                            required: ["codigo", "nombre"],
-                                            properties: {
-                                                codigo: { bsonType: "string" },
-                                                nombre: { bsonType: "string" }
-                                            }
-                                        },
-                                        fecha_inicial: { bsonType: "date" },
-                                        fecha_final: { bsonType: "date" },
-                                        dias: { bsonType: "int" },
-                                        descuento: { bsonType: "double" }
-                                    }
-                                }
-                            },
-                            total_devengos: { bsonType: "double" },
-                            total_deducciones: { bsonType: "double" },
-                            neto_pagar: { bsonType: "double" }
+                            codigo: { bsonType: "int" },
+                            nombre: { bsonType: "string" },
+                            valor: { bsonType: "double", minimum: 0 }
+                        }
+                    }
+                },
+                deducciones: {
+                    bsonType: "array",
+                    description: "Lista de conceptos deducidos",
+                    items: {
+                        bsonType: "object",
+                        required: ["codigo", "nombre", "valor"],
+                        properties: {
+                            codigo: { bsonType: "int" },
+                            nombre: { bsonType: "string" },
+                            valor: { bsonType: "double", minimum: 0 }
                         }
                     }
                 }
@@ -399,4 +433,148 @@ db.createCollection("nominas", {
     },
     validationLevel: "strict",
     validationAction: "error"
+});
+db.nominas.createIndex({ codigo: 1 }, { unique: true });
+db.nominas.createIndex({ empleado_id: 1 });
+db.nominas.createIndex({ fecha: 1 });
+
+// Inserción de nóminas
+db.nominas.insertMany([
+    {
+        codigo: 20250701,
+        empleado_id: ObjectId("6865611780a9f4cd56e1a11b"),
+        fecha: ISODate("2025-07-01T00:00:00Z"),
+        salario_base: 2000000.1,
+        devengos: [
+            { codigo: 1, nombre: "Salario básico", valor: 2000000.1 },
+            { codigo: 2, nombre: "Auxilio de transporte", valor: 140606.1 }
+        ],
+        deducciones: [
+            { codigo: 3, nombre: "Salud", valor: 80000.1 },
+            { codigo: 4, nombre: "Pensión", valor: 80000.1 }
+        ]
+    },
+    {
+        codigo: 20250702,
+        empleado_id: ObjectId("6865611780a9f4cd56e1a11c"),
+        fecha: ISODate("2025-07-01T00:00:00Z"),
+        salario_base: 1800000.1,
+        devengos: [
+            { codigo: 1, nombre: "Salario básico", valor: 1800000.1 },
+            { codigo: 2, nombre: "Auxilio de transporte", valor: 140606.1 }
+        ],
+        deducciones: [
+            { codigo: 3, nombre: "Salud", valor: 72000.1 },
+            { codigo: 4, nombre: "Pensión", valor: 72000.1 }
+        ]
+    },
+    {
+        codigo: 20250703,
+        empleado_id: ObjectId("6865611780a9f4cd56e1a11d"),
+        fecha: ISODate("2025-07-01T00:00:00Z"),
+        salario_base: 2500000.1,
+        devengos: [
+            { codigo: 1, nombre: "Salario básico", valor: 2500000.1 }
+        ],
+        deducciones: [
+            { codigo: 3, nombre: "Salud", valor: 100000.1 },
+            { codigo: 4, nombre: "Pensión", valor: 100000.1 },
+            { codigo: 5, nombre: "Retención en la fuente", valor: 50000.1 }
+        ]
+    },
+    {
+        codigo: 20250704,
+        empleado_id: ObjectId("6865611780a9f4cd56e1a11e"),
+        fecha: ISODate("2025-07-01T00:00:00Z"),
+        salario_base: 1500000.1,
+        devengos: [
+            { codigo: 1, nombre: "Salario básico", valor: 1500000.1 },
+            { codigo: 2, nombre: "Auxilio de transporte", valor: 140606.1 }
+        ],
+        deducciones: [
+            { codigo: 3, nombre: "Salud", valor: 60000.1 },
+            { codigo: 4, nombre: "Pensión", valor: 60000.1 }
+        ]
+    }
+]);
+db.nominas.insertOne({
+    codigo: 20250710,
+    empleado_id: ObjectId("6866054c832b886c0b05da25"),
+    fecha: ISODate("2025-07-01T00:00:00Z"),
+    salario_base: 2100000.1,
+    devengos: [
+        { codigo: 1, nombre: "Salario básico", valor: 2100000.1 },
+        { codigo: 2, nombre: "Auxilio de transporte", valor: 140606.1 }
+    ],
+    deducciones: [
+        { codigo: 3, nombre: "Salud", valor: 84000.1 },
+        { codigo: 4, nombre: "Pensión", valor: 84000.1 }
+    ]
+});
+
+// Creacion de Roles
+db.getSiblingDB("Acme_Corporate").createRole({
+    role: "administrador",
+    privileges: [
+        {
+            resource: { db: "Acme_Corporate", collection: "" },
+            actions: [
+                "find", "insert", "update", "remove",
+                "createCollection", "dropCollection",
+                "createIndex", "dropIndex"
+            ]
+        }
+    ],
+    roles: [] 
+});
+
+
+db.createRole({
+    role: "gestor_nomina",
+    privileges: [
+        {
+            resource: { db: "Acme_Corporate", collection: "empleados" },
+            actions: ["find", "insert", "update", "remove"]
+        },
+        {
+            resource: { db: "Acme_Corporate", collection: "contratos" },
+            actions: ["find", "insert", "update", "remove"]
+        },
+        {
+            resource: { db: "Acme_Corporate", collection: "novedades" },
+            actions: ["find", "insert", "update", "remove"]
+        },
+        {
+            resource: { db: "Acme_Corporate", collection: "nominas" },
+            actions: ["find", "insert", "update", "remove"]
+        }
+    ],
+    roles: []
+});
+
+db.createRole({
+    role: "empleado",
+    privileges: [
+        {
+            resource: { db: "Acme_Corporate", collection: "empleados" },
+            actions: ["find"]
+        },
+        {
+            resource: { db: "Acme_Corporate", collection: "contratos" },
+            actions: ["find"]
+        },
+        {
+            resource: { db: "Acme_Corporate", collection: "nominas" },
+            actions: ["find"]
+        }
+    ],
+    roles: []
+});
+
+db.createUser({
+    user: "nombre_usuario",
+    pwd: "contraseña_segura",
+    roles: [
+        { role: "empleado", db: "Acme_Corporate" }
+    ]
 });
